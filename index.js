@@ -1,20 +1,21 @@
-// L7mp: A programmable L7 meta-proxy
+// @l7mp/stunner-auth-lib: A library to create ICE configuration and TURN credentials for the
+// STUNner Kubernetes ingress gateway for WebRTC
 //
-// Copyright 2019 by its authors.
+// Copyright 2022 by its authors.
 // Some rights reserved.
 //
 // Original code taken from: https://github.com/rojo2/turn-credentials
 
 'use strict';
 
-import crypto from 'crypto';
+const crypto = require('crypto');
 
 /**
  * ICE configuration Options
  * @typedef {Object} IceConfigurationOptions
  * @property {string} address
  * @property {number} port
- * @property {string} type
+ * @property {string} auth_type
  * @property {string} realm
  * @property {string} username
  * @property {string} password
@@ -35,7 +36,7 @@ import crypto from 'crypto';
 /**
  * TURN Credential Options
  * @typedef {Object} TurnCredentialOptions
- * @property {string} type
+ * @property {string} auth_type
  * @property {string} realm
  * @property {string} username
  * @property {string} password
@@ -57,49 +58,55 @@ import crypto from 'crypto';
  * STUNner public address
  * @const {string}
  */
-const STUNNER_PUBLIC_ADDR = process.env.STUNNER_PUBLIC_ADDR; // no default!
+const STUNNER_PUBLIC_ADDR = "";  // no default!
 
 /**
  * STUNner public port
  * @const {string}
  */
-const STUNNER_PUBLIC_PORT = process.env.STUNNER_PUBLIC_PORT || 3478;
+const STUNNER_PUBLIC_PORT = 3478;
+
+/**
+ * STUNner UDP transport enabled
+ * @const {string}
+ */
+const STUNNER_TRANSPORT_UDP_ENABLE = true;
 
 /**
  * STUNner TCP transport enabled
  * @const {string}
  */
-const STUNNER_TRANSPORT_TCP = process.env.STUNNER_STUNNER_TRANSPORT_TCP || false;
+const STUNNER_TRANSPORT_TCP_ENABLE = false;
 
 /**
  * STUNner authentication mode
  * @const {string}
  */
-const STUNNER_AUTH_TYPE = process.env.STUNNER_AUTH_TYPE || 'plaintext';
+const STUNNER_AUTH_TYPE = 'plaintext';
 
 /**
  * STUN/TURN realm.
  * @const {string}
  */
-const STUNNER_REALM = process.env.STUNNER_REALM || 'stunner.l7mp.io';
+const STUNNER_REALM = 'stunner.l7mp.io';
 
 /**
  * STUNner username for plaintext authentication.
  * @const {string}
  */
-const STUNNER_USERNAME = process.env.STUNNER_USERNAME || 'user';
+const STUNNER_USERNAME = 'user';
 
 /**
  * STUNner password for plaintext authentication.
  * @const {string}
  */
-const STUNNER_PASSWORD = process.env.STUNNER_PASSWORD || 'pass';
+const STUNNER_PASSWORD = 'pass';
 
 /**
  * Shared secret for long-term credential authentication.
  * @const {string}
  */
-const STUNNER_SHARED_SECRET = process.env.STUNNER_SHARED_SECRET || 'secret';
+const STUNNER_SHARED_SECRET = 'my-secret';
 
 /**
  * Credential lifetime for long-term credential authentication.
@@ -117,32 +124,38 @@ const ICE_TRANSPORT_POLICY = 'relay';
  * Algorithm
  * @const {string}
  */
-const ALGORITHM = 'sha1'
+const ALGORITHM = 'sha1';
 
 /**
  * Encoding used
  * @const {string}
  */
-const ENCODING = 'base64'
+const ENCODING = 'base64';
 
 /**
  * Creates ICE configuration for STUNner
  * @param {ICEConfigurationOptions} [options]
  * @returns {ICEConfiguration}
  */
-export function generateIceConfig({
-    address              = STUNNER_PUBLIC_ADDR,
-    port                 = STUNNER_PUBLIC_PORT,
-    type                 = STUNNER_AUTH_TYPE,
-    realm                = STUNNER_REALM,
-    username             = STUNNER_USERNAME,
-    password             = STUNNER_PASSWORD,
-    secret               = STUNNER_SHARED_SECRET,
-    duration             = DURATION,
-    ice_transport_policy = ICE_TRANSPORT_POLICY,
-    algorithm            = ALGORITHM,
-    encoding             = ENCODING
-}) {
+function generateIceConfig(options){
+    if(!options)options={};
+    let address   = options.address   || process.env.STUNNER_PUBLIC_ADDR   || STUNNER_PUBLIC_ADDR;
+    let port      = options.port      || process.env.STUNNER_PUBLIC_PORT   || STUNNER_PUBLIC_PORT;
+    let auth_type = options.auth_type || process.env.STUNNER_AUTH_TYPE     || STUNNER_AUTH_TYPE;
+    let realm     = options.realm     || process.env.STUNNER_REALM         || STUNNER_REALM;
+    let username  = options.username  || process.env.STUNNER_USERNAME      || STUNNER_USERNAME;
+    let password  = options.password  || process.env.STUNNER_PASSWORD      || STUNNER_PASSWORD;
+    let secret    = options.secret    || process.env.STUNNER_SHARED_SECRET || STUNNER_SHARED_SECRET;
+    let duration  = options.duration  || process.env.DURATION              || DURATION;
+    let ice_transport_policy = options.ice_transport_policy ||
+        process.env.ICE_TRANSPORT_POLICY || ICE_TRANSPORT_POLICY;
+    let stunner_transport_udp_enable = options.stunner_transport_udp_enable ||
+        process.env.STUNNER_TRANSPORT_UDP_ENABLE || STUNNER_TRANSPORT_UDP_ENABLE;
+    let stunner_transport_tcp_enable = options.stunner_transport_tcp_enable ||
+        process.env.STUNNER_TRANSPORT_TCP_ENABLE || STUNNER_TRANSPORT_TCP_ENABLE;
+    let algorithm = options.algorithm || ALGORITHM;
+    let encoding  = options.encoding  || ENCODING;
+
     if(!address){
         console.error("generateIceConfig: invalid STUNner public address, please set " +
                       "STUNNER_PUBLIC_ADDR or specify the address as an argument");
@@ -150,36 +163,42 @@ export function generateIceConfig({
     }
     
     const cred = generateStunnerCredentials({
-        type,
-        realm, 
-        username,
-        password,
-        secret,
-        duration,
-        algorithm,
-        encoding,
+        auth_type: auth_type,
+        realm: realm, 
+        username: username,
+        password: password,
+        secret: secret,
+        duration: duration,
+        ice_transport_policy: ice_transport_policy,
+        algorithm: algorithm,
+        encoding: encoding,
     });
         
     var config = {
-        iceServers: [
-            {
-                url: `turn:${address}:${port}?transport=udp`,
-                username: cred.username,
-                credential: cred.password,
-            },
-        ],
+        iceServers: [],
         iceTransportPolicy: ice_transport_policy,
     };
-    if(STUNNER_TRANSPORT_TCP){
+
+    if(stunner_transport_udp_enable){
         config.iceServers.push(
             {
-                url: `turn:${address}:${port}?transport=tcp`,
+                url: `turn://${address}:${port}?transport=udp`,
                 username: cred.username,
-                credential: cred.password,
+                credential: cred.credential,
             }
         );
     }
 
+    if(stunner_transport_tcp_enable){
+        config.iceServers.push(
+            {
+                url: `turn://${address}:${port}?transport=tcp`,
+                username: cred.username,
+                credential: cred.credential,
+            }
+        );
+    }
+    console.log(config);
     return config;
 }
 
@@ -188,38 +207,38 @@ export function generateIceConfig({
  * @param {TurnCredentialsOptions} [options]
  * @returns {TurnCredentials}
  */
-export function generateStunnerCredentials({
-    type      = STUNNER_AUTH_TYPE,
-    realm     = STUNNER_REALM,
-    username  = STUNNER_USERNAME,
-    password  = STUNNER_PASSWORD,
-    secret    = STUNNER_SHARED_SECRET,
-    duration  = DURATION,
-    algorithm = ALGORITHM,
-    encoding  = ENCODING
-}) {
-    switch (type.toLowerCase()){
+function generateStunnerCredentials(options){
+    if(!options)options={};
+    let auth_type = options.auth_type || process.env.STUNNER_AUTH_TYPE     || STUNNER_AUTH_TYPE;
+    let realm     = options.realm     || process.env.STUNNER_REALM         || STUNNER_REALM;
+    let username  = options.username  || process.env.STUNNER_USERNAME      || STUNNER_USERNAME;
+    let password  = options.password  || process.env.STUNNER_PASSWORD      || STUNNER_PASSWORD;
+    let secret    = options.secret    || process.env.STUNNER_SHARED_SECRET || STUNNER_SHARED_SECRET;
+    let duration  = options.duration  || process.env.DURATION              || DURATION;
+    let algorithm = options.algorithm || ALGORITHM;
+    let encoding  = options.encoding  || ENCODING;
+
+    switch (auth_type.toLowerCase()){
     case 'plaintext':
         return {
-            username,
-            credential,
-            realm,
+            username: username,
+            credential: password,
+            realm: realm,
         };
     case 'longterm':
-        const timeStamp = Math.floor(Date.now() / 1000) + duration;
+        const timeStamp = Math.floor(Date.now() / 1000) + parseInt(duration);
         const hmac = crypto.createHmac(algorithm, secret);
-        // const username = `${timeStamp}${SEPARATOR}${userName}`;
-        const username = `$timeStamp`;
-        const credential = hmac.update(username).digest(encoding);
+        const credential = hmac.update(`$timeStamp`).digest(encoding);
         return {
-            username,
-            credential,
-            realm,
+            username: timeStamp,
+            credential: credential,
+            realm: realm,
         };
     default:
-        console.error('generateStunnerCredentials: invalid authentication type:', type);
+        console.error('generateStunnerCredentials: invalid authentication type:', auth_type);
         return undefined;
     }
 }
 
-export default generateIceConfig;
+module.exports.generateIceConfig = generateIceConfig;
+module.exports.generateStunnerCredentials = generateStunnerCredentials;

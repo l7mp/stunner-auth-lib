@@ -1,136 +1,193 @@
-const chai = require('chai').assert;
-import * as StunnerAuth from '@l7mp/stunner-auth-lib';
+const assert                     = require('chai').assert;
+const generateStunnerCredentials = require('../index.js').generateStunnerCredentials;
+const generateIceConfig          = require('../index.js').generateIceConfig;
 
-process.env.STUNNER_PUBLIC_ADDR = "";
-process.env.STUNNER_PUBLIC_PORT = "";
-process.env.STUNNER_TRANSPORT_TCP = "";
-process.env.STUNNER_TYPE = "";
-process.env.STUNNER_REALM = "";
-process.env.STUNNER_USERNAME = "";
-process.env.STUNNER_PASSWORD = "";
-process.env.STUNNER_SHARED_SECRET = "";
-process.env.DURATION = "";
+function cleanup(){
+    console.log('before:',process.env.STUNNER_PUBLIC_PORT);
+    process.env.STUNNER_PUBLIC_ADDR   = "";
+    process.env.STUNNER_PUBLIC_PORT   = "";
+    process.env.STUNNER_TRANSPORT_TCP = "";
+    process.env.STUNNER_AUTH_TYPE     = "";
+    process.env.STUNNER_REALM         = "";
+    process.env.STUNNER_USERNAME      = "";
+    process.env.STUNNER_PASSWORD      = "";
+    process.env.STUNNER_SHARED_SECRET = "";
+    process.env.DURATION              = "";
+    console.log('after:',process.env.STUNNER_PUBLIC_PORT);
+}
 
 describe('generateStunnerCredentials', ()  => {
     context('no_default', () => {
-        let cred = StunnerAuth.generateStunnerCredentials();
-        it('username', () => { assert.equal(cred.username, 'user'); });
-        it('password', () => { assert.equal(cred.username, 'pass'); });
-        it('realm',    () => { assert.equal(cred.username, 'stunner.l7mp.io'); });
+        cleanup();
+        let cred = generateStunnerCredentials();
+        
+        it('username',   () => { assert.equal(cred.username, 'user'); });
+        it('credential', () => { assert.equal(cred.credential, 'pass'); });
+        it('realm',      () => { assert.equal(cred.realm, 'stunner.l7mp.io'); });
     });
-    context('type: plaintext', () => {
-        let cred = StunnerAuth.generateStunnerCredentials({type: 'plaintext'});
-        it('username', () => { assert.equal(cred.username, 'user'); });
-        it('password', () => { assert.equal(cred.username, 'pass'); });
-        it('realm',    () => { assert.equal(cred.username, 'stunner.l7mp.io'); });
+    context('auth_type: plaintext', () => {
+        cleanup();
+        let cred = generateStunnerCredentials({auth_type: 'plaintext'});
+
+        it('username',   () => { assert.equal(cred.username, 'user'); });
+        it('credential', () => { assert.equal(cred.credential, 'pass'); });
+        it('realm',      () => { assert.equal(cred.realm, 'stunner.l7mp.io'); });
     });
-    context('type: longterm', () => {
-        let cred = StunnerAuth.generateStunnerCredentials({type: 'longterm'});
+    context('auth_type: longterm', () => {
+        cleanup();
+        let cred = generateStunnerCredentials({auth_type: 'longterm'});
+
         it('username',   () => { assert.isNumber(cred.username); });
-        it('duration-1', () => { assert.isAtLeast(Math.floor(Date.now()/1000), cred.username); });
-        it('duration-1', () => { assert.isAtMost(cred.username, Math.floor(Date.now()/1000 + 24 * 60 * 60)); });
-        it('password',   () => { assert.isNotEmpty(cred.password); });
-        it('realm',      () => { assert.equal(cred.username, 'stunner.l7mp.io'); });
+        it('duration-1', () => { assert.isAtMost(Math.floor(Date.now()/1000), cred.username); });
+        it('duration-2', () => { assert.isAtMost(cred.username, Math.floor(Date.now()/1000 + 24 * 60 * 60)); });
+        it('credential', () => { assert.isNotEmpty(cred.credential); });
+        it('realm',      () => { assert.equal(cred.realm, 'stunner.l7mp.io'); });
     });
-    context('type: invalid', () => {
-        assert.isUndefined(StunnerAuth.generateStunnerCredentials({type: 'invalid'}));
+    context('auth_type: invalid', () => {
+        cleanup();
+        assert.isUndefined(generateStunnerCredentials({auth_type: 'invalid'}));
     });
-    context('type: invalid, override', () => {
-        process.env.STUNNER_TYPE = "invalid";
-        assert.isUndefined(StunnerAuth.generateStunnerCredentials());
+    context('auth_type: invalid, override', () => {
+        cleanup();
+        process.env.STUNNER_AUTH_TYPE = "invalid";
+        assert.isUndefined(generateStunnerCredentials());
     });
-    context('type: invalid, override-2', () => {
-        process.env.STUNNER_TYPE = "plaintext";
-        assert.isUndefined(StunnerAuth.generateStunnerCredentials({type: 'invalid'}));
+    context('auth_type: invalid, override-2', () => {
+        cleanup();
+        process.env.STUNNER_AUTH_TYPE = "plaintext";
+        assert.isUndefined(generateStunnerCredentials({auth_type: 'invalid'}));
     });
-    context('type: longterm, override', () => {
-        process.env.STUNNER_TYPE = "longterm";
-        let cred = StunnerAuth.generateStunnerCredentials({type: 'plaintext'});
-        it('username', () => { assert.equal(cred.username, 'user'); });
-        it('password', () => { assert.equal(cred.username, 'pass'); });
-        it('realm',    () => { assert.equal(cred.username, 'stunner.l7mp.io'); });
+    context('auth_type: longterm, override', () => {
+        cleanup();
+        process.env.STUNNER_AUTH_TYPE = "longterm";
+        let cred = generateStunnerCredentials({auth_type: 'plaintext'});
+
+        it('username',   () => { assert.equal(cred.username, 'user'); });
+        it('credential', () => { assert.equal(cred.credential, 'pass'); });
+        it('realm',      () => { assert.equal(cred.realm, 'stunner.l7mp.io'); });
     });
-    context('type: longterm, override', () => {
-        process.env.STUNNER_TYPE = "plaintext";
-        let cred = StunnerAuth.generateStunnerCredentials({type: 'longterm'});
+    context('auth_type: longterm, override', () => {
+        cleanup();
+        process.env.STUNNER_AUTH_TYPE = "plaintext";
+        let cred = generateStunnerCredentials({auth_type: 'longterm'});
+
         it('username',   () => { assert.isNumber(cred.username); });
-        it('duration-1', () => { assert.isAtLeast(Math.floor(Date.now()/1000), cred.username); });
-        it('duration-1', () => { assert.isAtMost(cred.username, Math.floor(Date.now()/1000 + 24 * 60 * 60)); });
-        it('password',   () => { assert.isNotEmpty(cred.password); });
-        it('realm',      () => { assert.equal(cred.username, 'stunner.l7mp.io'); });
+        it('duration-1', () => { assert.isAtMost(Math.floor(Date.now()/1000), cred.username); });
+        it('duration-2', () => { assert.isAtMost(cred.username, Math.floor(Date.now()/1000 + 24 * 60 * 60)); });
+        it('credential', () => { assert.isNotEmpty(cred.credential); });
+        it('realm',      () => { assert.equal(cred.realm, 'stunner.l7mp.io'); });
     });
-    context('type: longterm, duration', () => {
-        process.env.STUNNER_TYPE = "longterm";
+    context('auth_type: longterm, duration', () => {
+        cleanup();
+        process.env.STUNNER_AUTH_TYPE = "longterm";
         process.env.DURATION = 100;
-        let cred = StunnerAuth.generateStunnerCredentials();
+        let cred = generateStunnerCredentials();
+
         it('username',   () => { assert.isNumber(cred.username); });
-        it('duration-1', () => { assert.isAtLeast(Math.floor(Date.now()/1000), cred.username); });
-        it('duration-1', () => { assert.isAtMost(cred.username, Math.floor(Date.now()/1000 + 100)); });
-        it('password',   () => { assert.isNotEmpty(cred.password); });
-        it('realm',      () => { assert.equal(cred.username, 'stunner.l7mp.io'); });
+        it('duration-1', () => { assert.isAtMost(Math.floor(Date.now()/1000), cred.username); });
+        it('duration-2', () => { assert.isAtMost(cred.username, Math.floor(Date.now()/1000 + 100)); });
+        it('credential', () => { assert.isNotEmpty(cred.credential); });
+        it('realm',      () => { assert.equal(cred.realm, 'stunner.l7mp.io'); });
     });
     context('realm', () => {
+        cleanup();
         process.env.STUNNER_REALM = "realm";
-        let cred = StunnerAuth.generateStunnerCredentials();
-        it('realm',    () => { assert.equal(cred.username, 'realm'); });
+        let cred = generateStunnerCredentials();
+
+        it('realm', () => { assert.equal(cred.realm, 'realm'); });
     });
     context('realm, override', () => {
+        cleanup();
         process.env.STUNNER_REALM = "realm";
-        let cred = StunnerAuth.generateStunnerCredentials({realm: "another_realm"});
-        it('realm',    () => { assert.equal(cred.username, 'another_realm'); });
+        let cred = generateStunnerCredentials({realm: "another_realm"});
+
+        it('realm', () => { assert.equal(cred.realm, 'another_realm'); });
     });
 });
 
 describe('generateIceConfig', ()  => {
     context('no_default', () => {
-        assert.isUndefined(StunnerAuth.generateIceConfig());
+        cleanup();
+        assert.isUndefined(generateIceConfig());
     });
     context('address', () => {
-        let config = StunnerAuth.generateIceConfig({address: '1.2.3.4'});
+        cleanup();
+        let config = generateIceConfig({address: '1.2.3.4'});
+        
         it('config',      () => { assert.isDefined(config); });
-        it('servers-def', () => { assert.isDefined(config.IceServers); });
-        it('servers-len', () => { assert.isNotEmpty(config.IceServers); });
-        it('url',         () => { assert.isDefined(config.IceServers[0].url); });
-        it('proto',       () => { assert.match(config.IceServers[0].url, /^turn/); });
-        it('addr',        () => { assert.match(config.IceServers[0].url, /1\.2\.3\.4/); });
-        it('port',        () => { assert.match(config.IceServers[0].url, /3478/); });
-        it('proto',       () => { assert.match(config.IceServers[0].url, /transport=udp$/); });
-        it('username',    () => { assert.equal(config.IceServers[0].username, 'user'); });
-        it('password',    () => { assert.equal(config.IceServers[0].username, 'pass'); });
+        it('servers-def', () => { assert.isDefined(config.iceServers); });
+        it('servers-len', () => { assert.isNotEmpty(config.iceServers); });
+        it('url',         () => { assert.isDefined(config.iceServers[0].url); });
+        it('proto',       () => { assert.match(config.iceServers[0].url, /^turn/); });
+        it('addr',        () => { assert.match(config.iceServers[0].url, /1\.2\.3\.4/); });
+        it('port',        () => { assert.match(config.iceServers[0].url, /3478/); });
+        it('proto',       () => { assert.match(config.iceServers[0].url, /transport=udp$/); });
+        it('username',    () => { assert.equal(config.iceServers[0].username, 'user'); });
+        it('credential',  () => { assert.equal(config.iceServers[0].credential, 'pass'); });
         it('policy',      () => { assert.isDefined(config.iceTransportPolicy); });
         it('relay',       () => { assert.equal(config.iceTransportPolicy, 'relay'); });
     });
     context('address-port, env', () => {
-        process.env.STUNNER_PUBLIC_ADDRESS = "5.6.7.8";
+        cleanup();
+        process.env.STUNNER_PUBLIC_ADDR = "5.6.7.8";
         process.env.STUNNER_PUBLIC_PORT = 1111;
-        let config = StunnerAuth.generateIceConfig();
+        let config = generateIceConfig();
+        
         it('config',      () => { assert.isDefined(config); });
-        it('servers-def', () => { assert.isDefined(config.IceServers); });
-        it('servers-len', () => { assert.isNotEmpty(config.IceServers); });
-        it('url',         () => { assert.isDefined(config.IceServers[0].url); });
-        it('proto',       () => { assert.match(config.IceServers[0].url, /^turn/); });
-        it('addr',        () => { assert.match(config.IceServers[0].url, /5\.6\.7\.8/); });
-        it('port',        () => { assert.match(config.IceServers[0].url, /1111/); });
-        it('proto',       () => { assert.match(config.IceServers[0].url, /transport=udp$/); });
-        it('username',    () => { assert.equal(config.IceServers[0].username, 'user'); });
-        it('password',    () => { assert.equal(config.IceServers[0].username, 'pass'); });
+        it('servers-def', () => { assert.isDefined(config.iceServers); });
+        it('servers-len', () => { assert.isNotEmpty(config.iceServers); });
+        it('url',         () => { assert.isDefined(config.iceServers[0].url); });
+        it('proto',       () => { assert.match(config.iceServers[0].url, /^turn/); });
+        it('addr',        () => { assert.match(config.iceServers[0].url, /5\.6\.7\.8/); });
+        it('port',        () => { assert.match(config.iceServers[0].url, /1111/); });
+        it('proto',       () => { assert.match(config.iceServers[0].url, /transport=udp$/); });
+        it('username',    () => { assert.equal(config.iceServers[0].username, 'user'); });
+        it('credential',  () => { assert.equal(config.iceServers[0].credential, 'pass'); });
         it('policy',      () => { assert.isDefined(config.iceTransportPolicy); });
         it('relay',       () => { assert.equal(config.iceTransportPolicy, 'relay'); });
     });
     context('address-port, env override', () => {
-        process.env.STUNNER_PUBLIC_ADDRESS = "5.6.7.8";
+        cleanup();
+        process.env.STUNNER_PUBLIC_ADDR = "5.6.7.8";
         process.env.STUNNER_PUBLIC_PORT = 1111;
-        let config = StunnerAuth.generateIceConfig({address: '4.3.2.1', port: 3333});
+        let config = generateIceConfig({address: '4.3.2.1', port: 3333});
+        
         it('config',      () => { assert.isDefined(config); });
-        it('servers-def', () => { assert.isDefined(config.IceServers); });
-        it('servers-len', () => { assert.isNotEmpty(config.IceServers); });
-        it('url',         () => { assert.isDefined(config.IceServers[0].url); });
-        it('proto',       () => { assert.match(config.IceServers[0].url, /^turn/); });
-        it('addr',        () => { assert.match(config.IceServers[0].url, /4\.3\.2\.1/); });
-        it('port',        () => { assert.match(config.IceServers[0].url, /333/); });
-        it('proto',       () => { assert.match(config.IceServers[0].url, /transport=udp$/); });
-        it('username',    () => { assert.equal(config.IceServers[0].username, 'user'); });
-        it('password',    () => { assert.equal(config.IceServers[0].username, 'pass'); });
+        it('servers-def', () => { assert.isDefined(config.iceServers); });
+        it('servers-len', () => { assert.isNotEmpty(config.iceServers); });
+        it('url',         () => { assert.isDefined(config.iceServers[0].url); });
+        it('proto',       () => { assert.match(config.iceServers[0].url, /^turn/); });
+        it('addr',        () => { assert.match(config.iceServers[0].url, /4\.3\.2\.1/); });
+        it('port',        () => { assert.match(config.iceServers[0].url, /3333/); });
+        it('proto',       () => { assert.match(config.iceServers[0].url, /transport=udp$/); });
+        it('username',    () => { assert.equal(config.iceServers[0].username, 'user'); });
+        it('credential',  () => { assert.equal(config.iceServers[0].credential, 'pass'); });
+        it('policy',      () => { assert.isDefined(config.iceTransportPolicy); });
+        it('relay',       () => { assert.equal(config.iceTransportPolicy, 'relay'); });
+    });
+    context('enable tcp', () => {
+        cleanup();
+        console.log(process.env.STUNNER_PUBLIC_PORT);
+        process.env.STUNNER_TRANSPORT_TCP_ENABLE = "1";
+        let config = generateIceConfig({address: '4.3.2.1'});
+        
+        it('config',      () => { assert.isDefined(config); });
+        it('servers-def', () => { assert.isDefined(config.iceServers); });
+        it('servers-len', () => { assert.equal(config.iceServers.length, 2); });
+        it('url-1',       () => { assert.isDefined(config.iceServers[0].url); });
+        it('proto-1',     () => { assert.match(config.iceServers[0].url, /^turn/); });
+        it('addr-1',      () => { assert.match(config.iceServers[0].url, /4\.3\.2\.1/); });
+        it('port-1',      () => { assert.match(config.iceServers[0].url, /3478/); });
+        it('proto-1',     () => { assert.match(config.iceServers[0].url, /transport=udp$/); });
+        it('username-1',  () => { assert.equal(config.iceServers[0].username, 'user'); });
+        it('credential-1',() => { assert.equal(config.iceServers[0].credential, 'pass'); });
+        it('url-2',       () => { assert.isDefined(config.iceServers[1].url); });
+        it('proto-2',     () => { assert.match(config.iceServers[1].url, /^turn/); });
+        it('addr-2',      () => { assert.match(config.iceServers[1].url, /4\.3\.2\.1/); });
+        it('port-2',      () => { assert.match(config.iceServers[1].url, /3478/); });
+        it('proto-2',     () => { assert.match(config.iceServers[1].url, /transport=tcp$/); });
+        it('username-2',  () => { assert.equal(config.iceServers[1].username, 'user'); });
+        it('credential-2',() => { assert.equal(config.iceServers[1].credential, 'pass'); });
         it('policy',      () => { assert.isDefined(config.iceTransportPolicy); });
         it('relay',       () => { assert.equal(config.iceTransportPolicy, 'relay'); });
     });
