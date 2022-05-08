@@ -88,7 +88,7 @@ STUNner credentials in a single step and sending it back the WebRTC clients duri
   var ICE_config = StunnerAuth.getIceConfig({
     address: '1.2.3.4',            // ovveride STUNNER_PUBLIC_ADDR
     port: 3478,                    // ovveride STUNNER_PUBLIC_PORT
-    type: 'plaintext',             // override STUNNER_AUTH_TYPE
+    auth_type: 'plaintext',        // override STUNNER_AUTH_TYPE
     username: 'my-user',           // override STUNNER_USERNAME
     password: 'my-password',       // override STUNNER_PASSWORD
     ice_transport_policy: 'relay', // override STUNNER_ICE_TRANSPORT_POLICY
@@ -123,11 +123,16 @@ authenticating with STUNner.
 
 ```javascript
 var cred = StunnerAuth.getStunnerCredentials({
-    type: 'longterm',        // override STUNNER_AUTH_TYPE
+    auth_type: 'longterm',   // override STUNNER_AUTH_TYPE
     secret: 'my-secret',     // override STUNNER_SHARED_SECRET
     duration: 24 * 60 * 60,  // lifetime the longterm credentials are effective
 });
-console.log(`STUNner credentials: ${cred.username} / ${cred.password}`;
+console.log(`STUNner credentials: ${cred.username} / ${cred.credential}`);
+```
+
+Output:
+```
+STUNner credentials: 1652118264 / nRU+Iz2ENeP2Y3sDXzSRsFRDs8s=
 ```
 
 ## Help
