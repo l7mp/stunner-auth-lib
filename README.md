@@ -8,7 +8,7 @@ const StunnerAuth = require('@l7mp/stunner-auth-lib');
 
 var credentials = StunnerAuth.getStunnerCredentials({
     secret: "my-shared-secret",
-    duation: 24*60*60,
+    duration: 24*60*60,
 });
 ```
 
@@ -16,7 +16,7 @@ var credentials = StunnerAuth.getStunnerCredentials({
 
 Install from NPM.
 
-```
+```sh
 $ npm install @l7mp/stunner-auth-lib
 ```
 
@@ -24,11 +24,13 @@ $ npm install @l7mp/stunner-auth-lib
 
 This library simplifies generating `plaintext` and `longterm` STUN/TURN credentials and ICE server
 configuration for accessing the [STUNner Kubernetes ingress gateway for WebRTC
-](https://github.com/l7mp/stunner). The intended use is to ease the generation of STUN/TURN
-credentials and ICE server configuration stanza in the WebRTC application server. The application
-server can send these back to the WebRTC clients in the course of the WebSocket/JSON call setup
-process. Clients can then use the STUN/TURN credentials and ICE server configuration to
-authenticate with STUNner in order to reach the WebRTC media plane deployed into Kubernetes.
+](https://github.com/l7mp/stunner). 
+
+The intended use is to ease the generation of STUN/TURN credentials and ICE server configuration
+stanza in the WebRTC application server. The application server can send these back to the WebRTC
+clients in the course of the WebSocket/JSON call setup process. Clients can then use the STUN/TURN
+credentials and ICE server configuration received from the application server to authenticate with
+STUNner, in order to reach the WebRTC media plane deployed into Kubernetes.
 
 ### Configuration
 
@@ -52,7 +54,7 @@ spec:
 ```
 
 The library uses the following [STUNner
-configuration](https://github.com/l7mp/stunner#configuration).
+configuration](https://github.com/l7mp/stunner#configuration) parameters.
 
 * `STUNNER_PUBLIC_ADDR` (no default, must be
   [customized](https://github.com/l7mp/stunner#learning-the-external-ip-and-port)): STUNner public
@@ -81,7 +83,7 @@ STUNner credentials in a single step and sending it back the WebRTC clients duri
 
 * Generate a full [ICE configuration
   object](https://developer.mozilla.org/en-US/docs/Web/API/RTCIceServer) on
-  the [WebRTC Application server](https://bloggeek.me/webrtc-server)
+  the [WebRTC application server](https://bloggeek.me/webrtc-server)
   ```javascript
   const StunnerAuth = require('@l7mp/stunner-auth-lib');
   ...
