@@ -127,7 +127,7 @@ authenticating with STUNner.
 var cred = StunnerAuth.getStunnerCredentials({
     auth_type: 'longterm',   // override STUNNER_AUTH_TYPE
     secret: 'my-secret',     // override STUNNER_SHARED_SECRET
-    duration: 24 * 60 * 60,  // lifetime the longterm credentials are effective
+    duration: 24 * 60 * 60,  // lifetime the longterm credential is effective
 });
 console.log(`STUNner credentials: ${cred.username} / ${cred.credential}`);
 ```
