@@ -118,7 +118,7 @@ const DURATION = process.env.DURATION || (24 * 60 * 60);
  * ICE transport policy: either 'all' (generate all ICE candidates) or 'relay' (consider TURN relay candidates only).
  * @const {string}
  */
-const ICE_TRANSPORT_POLICY = 'relay';
+const STUNNER_ICE_TRANSPORT_POLICY = 'relay';
 
 /**
  * Algorithm
@@ -148,7 +148,7 @@ function getIceConfig(options){
     let secret    = options.secret    || process.env.STUNNER_SHARED_SECRET || STUNNER_SHARED_SECRET;
     let duration  = options.duration  || process.env.DURATION              || DURATION;
     let ice_transport_policy = options.ice_transport_policy ||
-        process.env.ICE_TRANSPORT_POLICY || ICE_TRANSPORT_POLICY;
+        process.env.STUNNER_ICE_TRANSPORT_POLICY || STUNNER_ICE_TRANSPORT_POLICY;
     let stunner_transport_udp_enable = options.stunner_transport_udp_enable ||
         process.env.STUNNER_TRANSPORT_UDP_ENABLE || STUNNER_TRANSPORT_UDP_ENABLE;
     let stunner_transport_tcp_enable = options.stunner_transport_tcp_enable ||
