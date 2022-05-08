@@ -181,7 +181,7 @@ function getIceConfig(options){
     if(stunner_transport_udp_enable){
         config.iceServers.push(
             {
-                url: `turn://${address}:${port}?transport=udp`,
+                url: `turn:${address}:${port}?transport=udp`,
                 username: cred.username,
                 credential: cred.credential,
             }
@@ -191,7 +191,7 @@ function getIceConfig(options){
     if(stunner_transport_tcp_enable){
         config.iceServers.push(
             {
-                url: `turn://${address}:${port}?transport=tcp`,
+                url: `turn:${address}:${port}?transport=tcp`,
                 username: cred.username,
                 credential: cred.credential,
             }
