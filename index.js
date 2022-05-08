@@ -137,7 +137,7 @@ const ENCODING = 'base64';
  * @param {ICEConfigurationOptions} [options]
  * @returns {ICEConfiguration}
  */
-function generateIceConfig(options){
+function getIceConfig(options){
     if(!options)options={};
     let address   = options.address   || process.env.STUNNER_PUBLIC_ADDR   || STUNNER_PUBLIC_ADDR;
     let port      = options.port      || process.env.STUNNER_PUBLIC_PORT   || STUNNER_PUBLIC_PORT;
@@ -157,12 +157,12 @@ function generateIceConfig(options){
     let encoding  = options.encoding  || ENCODING;
 
     if(!address){
-        console.error("generateIceConfig: invalid STUNner public address, please set " +
+        console.error("getIceConfig: invalid STUNner public address, please set " +
                       "STUNNER_PUBLIC_ADDR or specify the address as an argument");
         return undefined;
     }
     
-    const cred = generateStunnerCredentials({
+    const cred = getStunnerCredentials({
         auth_type: auth_type,
         realm: realm, 
         username: username,
@@ -198,7 +198,6 @@ function generateIceConfig(options){
             }
         );
     }
-    console.log(config);
     return config;
 }
 
@@ -207,7 +206,7 @@ function generateIceConfig(options){
  * @param {TurnCredentialsOptions} [options]
  * @returns {TurnCredentials}
  */
-function generateStunnerCredentials(options){
+function getStunnerCredentials(options){
     if(!options)options={};
     let auth_type = options.auth_type || process.env.STUNNER_AUTH_TYPE     || STUNNER_AUTH_TYPE;
     let realm     = options.realm     || process.env.STUNNER_REALM         || STUNNER_REALM;
@@ -235,10 +234,10 @@ function generateStunnerCredentials(options){
             realm: realm,
         };
     default:
-        console.error('generateStunnerCredentials: invalid authentication type:', auth_type);
+        console.error('getStunnerCredentials: invalid authentication type:', auth_type);
         return undefined;
     }
 }
 
-module.exports.generateIceConfig = generateIceConfig;
-module.exports.generateStunnerCredentials = generateStunnerCredentials;
+module.exports.getIceConfig = getIceConfig;
+module.exports.getStunnerCredentials = getStunnerCredentials;

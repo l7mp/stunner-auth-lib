@@ -1,9 +1,8 @@
-const assert                     = require('chai').assert;
-const generateStunnerCredentials = require('../index.js').generateStunnerCredentials;
-const generateIceConfig          = require('../index.js').generateIceConfig;
+const assert                = require('chai').assert;
+const getStunnerCredentials = require('../index.js').getStunnerCredentials;
+const getIceConfig          = require('../index.js').getIceConfig;
 
 function cleanup(){
-    console.log('before:',process.env.STUNNER_PUBLIC_PORT);
     process.env.STUNNER_PUBLIC_ADDR   = "";
     process.env.STUNNER_PUBLIC_PORT   = "";
     process.env.STUNNER_TRANSPORT_TCP = "";
@@ -13,13 +12,12 @@ function cleanup(){
     process.env.STUNNER_PASSWORD      = "";
     process.env.STUNNER_SHARED_SECRET = "";
     process.env.DURATION              = "";
-    console.log('after:',process.env.STUNNER_PUBLIC_PORT);
 }
 
-describe('generateStunnerCredentials', ()  => {
+describe('getStunnerCredentials', ()  => {
     context('no_default', () => {
         cleanup();
-        let cred = generateStunnerCredentials();
+        let cred = getStunnerCredentials();
         
         it('username',   () => { assert.equal(cred.username, 'user'); });
         it('credential', () => { assert.equal(cred.credential, 'pass'); });
@@ -27,7 +25,7 @@ describe('generateStunnerCredentials', ()  => {
     });
     context('auth_type: plaintext', () => {
         cleanup();
-        let cred = generateStunnerCredentials({auth_type: 'plaintext'});
+        let cred = getStunnerCredentials({auth_type: 'plaintext'});
 
         it('username',   () => { assert.equal(cred.username, 'user'); });
         it('credential', () => { assert.equal(cred.credential, 'pass'); });
@@ -35,7 +33,7 @@ describe('generateStunnerCredentials', ()  => {
     });
     context('auth_type: longterm', () => {
         cleanup();
-        let cred = generateStunnerCredentials({auth_type: 'longterm'});
+        let cred = getStunnerCredentials({auth_type: 'longterm'});
 
         it('username',   () => { assert.isNumber(cred.username); });
         it('duration-1', () => { assert.isAtMost(Math.floor(Date.now()/1000), cred.username); });
@@ -45,22 +43,22 @@ describe('generateStunnerCredentials', ()  => {
     });
     context('auth_type: invalid', () => {
         cleanup();
-        assert.isUndefined(generateStunnerCredentials({auth_type: 'invalid'}));
+        assert.isUndefined(getStunnerCredentials({auth_type: 'invalid'}));
     });
     context('auth_type: invalid, override', () => {
         cleanup();
         process.env.STUNNER_AUTH_TYPE = "invalid";
-        assert.isUndefined(generateStunnerCredentials());
+        assert.isUndefined(getStunnerCredentials());
     });
     context('auth_type: invalid, override-2', () => {
         cleanup();
         process.env.STUNNER_AUTH_TYPE = "plaintext";
-        assert.isUndefined(generateStunnerCredentials({auth_type: 'invalid'}));
+        assert.isUndefined(getStunnerCredentials({auth_type: 'invalid'}));
     });
     context('auth_type: longterm, override', () => {
         cleanup();
         process.env.STUNNER_AUTH_TYPE = "longterm";
-        let cred = generateStunnerCredentials({auth_type: 'plaintext'});
+        let cred = getStunnerCredentials({auth_type: 'plaintext'});
 
         it('username',   () => { assert.equal(cred.username, 'user'); });
         it('credential', () => { assert.equal(cred.credential, 'pass'); });
@@ -69,7 +67,7 @@ describe('generateStunnerCredentials', ()  => {
     context('auth_type: longterm, override', () => {
         cleanup();
         process.env.STUNNER_AUTH_TYPE = "plaintext";
-        let cred = generateStunnerCredentials({auth_type: 'longterm'});
+        let cred = getStunnerCredentials({auth_type: 'longterm'});
 
         it('username',   () => { assert.isNumber(cred.username); });
         it('duration-1', () => { assert.isAtMost(Math.floor(Date.now()/1000), cred.username); });
@@ -81,7 +79,7 @@ describe('generateStunnerCredentials', ()  => {
         cleanup();
         process.env.STUNNER_AUTH_TYPE = "longterm";
         process.env.DURATION = 100;
-        let cred = generateStunnerCredentials();
+        let cred = getStunnerCredentials();
 
         it('username',   () => { assert.isNumber(cred.username); });
         it('duration-1', () => { assert.isAtMost(Math.floor(Date.now()/1000), cred.username); });
@@ -92,27 +90,27 @@ describe('generateStunnerCredentials', ()  => {
     context('realm', () => {
         cleanup();
         process.env.STUNNER_REALM = "realm";
-        let cred = generateStunnerCredentials();
+        let cred = getStunnerCredentials();
 
         it('realm', () => { assert.equal(cred.realm, 'realm'); });
     });
     context('realm, override', () => {
         cleanup();
         process.env.STUNNER_REALM = "realm";
-        let cred = generateStunnerCredentials({realm: "another_realm"});
+        let cred = getStunnerCredentials({realm: "another_realm"});
 
         it('realm', () => { assert.equal(cred.realm, 'another_realm'); });
     });
 });
 
-describe('generateIceConfig', ()  => {
+describe('getIceConfig', ()  => {
     context('no_default', () => {
         cleanup();
-        assert.isUndefined(generateIceConfig());
+        assert.isUndefined(getIceConfig());
     });
     context('address', () => {
         cleanup();
-        let config = generateIceConfig({address: '1.2.3.4'});
+        let config = getIceConfig({address: '1.2.3.4'});
         
         it('config',      () => { assert.isDefined(config); });
         it('servers-def', () => { assert.isDefined(config.iceServers); });
@@ -131,7 +129,7 @@ describe('generateIceConfig', ()  => {
         cleanup();
         process.env.STUNNER_PUBLIC_ADDR = "5.6.7.8";
         process.env.STUNNER_PUBLIC_PORT = 1111;
-        let config = generateIceConfig();
+        let config = getIceConfig();
         
         it('config',      () => { assert.isDefined(config); });
         it('servers-def', () => { assert.isDefined(config.iceServers); });
@@ -150,7 +148,7 @@ describe('generateIceConfig', ()  => {
         cleanup();
         process.env.STUNNER_PUBLIC_ADDR = "5.6.7.8";
         process.env.STUNNER_PUBLIC_PORT = 1111;
-        let config = generateIceConfig({address: '4.3.2.1', port: 3333});
+        let config = getIceConfig({address: '4.3.2.1', port: 3333});
         
         it('config',      () => { assert.isDefined(config); });
         it('servers-def', () => { assert.isDefined(config.iceServers); });
@@ -167,9 +165,8 @@ describe('generateIceConfig', ()  => {
     });
     context('enable tcp', () => {
         cleanup();
-        console.log(process.env.STUNNER_PUBLIC_PORT);
         process.env.STUNNER_TRANSPORT_TCP_ENABLE = "1";
-        let config = generateIceConfig({address: '4.3.2.1'});
+        let config = getIceConfig({address: '4.3.2.1'});
         
         it('config',      () => { assert.isDefined(config); });
         it('servers-def', () => { assert.isDefined(config.iceServers); });
