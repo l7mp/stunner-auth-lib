@@ -27,8 +27,8 @@ configuration for accessing the [STUNner Kubernetes ingress gateway for WebRTC
 ](https://github.com/l7mp/stunner). The intended use is to ease the generation of STUN/TURN
 credentials and ICE server configuration stanza in the WebRTC application server. The application
 server can send these back to the WebRTC clients in the course of the WebSocket/JSON call setup
-process, which can then use the STUN/TURN credentials and ICE server configuration to authenticate
-with STUNner in order to reach the WebRTC media plane deployed into Kubernetes behind STUNner.
+process. Clients can then use the STUN/TURN credentials and ICE server configuration to
+authenticate with STUNner in order to reach the WebRTC media plane deployed into Kubernetes.
 
 ### Configuration
 
@@ -86,12 +86,27 @@ STUNner credentials in a single step and sending it back the WebRTC clients duri
   const StunnerAuth = require('@l7mp/stunner-auth-lib');
   ...
   var ICE_config = StunnerAuth.getIceConfig({
-    address: '1.2.3.4',      // ovveride STUNNER_PUBLIC_ADDR
-    port: 3478,              // ovveride STUNNER_PUBLIC_PORT
-    type: 'plaintext,        // override STUNNER_AUTH_TYPE
-    username: 'my-user',     // override STUNNER_USERNAME
-    password: 'my-password', // override STUNNER_PASSWORD
-});
+    address: '1.2.3.4',            // ovveride STUNNER_PUBLIC_ADDR
+    port: 3478,                    // ovveride STUNNER_PUBLIC_PORT
+    type: 'plaintext',             // override STUNNER_AUTH_TYPE
+    username: 'my-user',           // override STUNNER_USERNAME
+    password: 'my-password',       // override STUNNER_PASSWORD
+    ice_transport_policy: 'relay', // override STUNNER_ICE_TRANSPORT_POLICY
+  });
+  console.log(ICE_config);
+  ```
+  Output:
+  ```javascript
+  {
+    iceServers: [
+      {
+        url: 'turn://1.2.3.4:3478?transport=udp',
+        username: 'my-user',
+        credential: 'my-password'
+      }
+    ],
+    iceTransportPolicy: 'relay'
+  }
   ```
 * Send the generated ICE configuration to the clients during the WebSocket/JSON call setup process
   (e.g., during user registration) and use this configuration in the clients to initialize the WebRTC
