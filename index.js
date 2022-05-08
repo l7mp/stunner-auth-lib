@@ -28,9 +28,8 @@ const crypto = require('crypto');
 /**
  * ICE Configuration
  * @typedef {Object} IceConfiguration
- * @property {string} username
- * @property {string} password
- * @property {string} realm
+ * @property {array} IceServers
+ * @property {string} iceTransportPolicy
  */
 
 /**
@@ -50,7 +49,7 @@ const crypto = require('crypto');
  * TURN Credentials
  * @typedef {Object} TurnCredentials
  * @property {string} username
- * @property {string} password
+ * @property {string} credential
  * @property {string} realm
  */
 
