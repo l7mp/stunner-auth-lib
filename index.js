@@ -148,13 +148,28 @@ function getIceConfig(options){
     let duration  = options.duration  || process.env.DURATION              || DURATION;
     let ice_transport_policy = options.ice_transport_policy ||
         process.env.STUNNER_ICE_TRANSPORT_POLICY || STUNNER_ICE_TRANSPORT_POLICY;
-    let stunner_transport_udp_enable = options.stunner_transport_udp_enable ||
-        process.env.STUNNER_TRANSPORT_UDP_ENABLE || STUNNER_TRANSPORT_UDP_ENABLE;
-    let stunner_transport_tcp_enable = options.stunner_transport_tcp_enable ||
-        process.env.STUNNER_TRANSPORT_TCP_ENABLE || STUNNER_TRANSPORT_TCP_ENABLE;
     let algorithm = options.algorithm || ALGORITHM;
     let encoding  = options.encoding  || ENCODING;
 
+    // special-case boolean cong
+    let transport_udp_enable = STUNNER_TRANSPORT_UDP_ENABLE;
+    if ("STUNNER_TRANSPORT_UDP_ENABLE" in process.env){
+        transport_udp_enable = process.env.STUNNER_TRANSPORT_UDP_ENABLE;
+        if(transport_udp_enable === "0") transport_udp_enable = false;
+    }
+    if (typeof options.transport_udp_enable !== 'undefined') {
+        transport_udp_enable = options.transport_udp_enable;
+    }
+
+    let transport_tcp_enable = STUNNER_TRANSPORT_TCP_ENABLE;
+    if ("STUNNER_TRANSPORT_TCP_ENABLE" in process.env){
+        transport_tcp_enable = process.env.STUNNER_TRANSPORT_TCP_ENABLE;
+        if(transport_tcp_enable === "0") transport_tcp_enable = false;
+    }
+    if (typeof options.transport_tcp_enable !== 'undefined') {
+        transport_tcp_enable = options.transport_tcp_enable;
+    }
+    
     if(!address){
         console.error("getIceConfig: invalid STUNner public address, please set " +
                       "STUNNER_PUBLIC_ADDR or specify the address as an argument");
@@ -178,7 +193,7 @@ function getIceConfig(options){
         iceTransportPolicy: ice_transport_policy,
     };
 
-    if(stunner_transport_udp_enable){
+    if(transport_udp_enable){
         config.iceServers.push(
             {
                 url: `turn:${address}:${port}?transport=udp`,
@@ -188,7 +203,7 @@ function getIceConfig(options){
         );
     }
 
-    if(stunner_transport_tcp_enable){
+    if(transport_tcp_enable){
         config.iceServers.push(
             {
                 url: `turn:${address}:${port}?transport=tcp`,

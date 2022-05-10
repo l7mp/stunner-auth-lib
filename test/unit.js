@@ -4,15 +4,17 @@ const getIceConfig            = require('../index.js').getIceConfig;
 const getLongtermForTimeStamp = require('../index.js').getLongtermForTimeStamp;
 
 function cleanup(){
-    process.env.STUNNER_PUBLIC_ADDR   = "";
-    process.env.STUNNER_PUBLIC_PORT   = "";
-    process.env.STUNNER_TRANSPORT_TCP = "";
-    process.env.STUNNER_AUTH_TYPE     = "";
-    process.env.STUNNER_REALM         = "";
-    process.env.STUNNER_USERNAME      = "";
-    process.env.STUNNER_PASSWORD      = "";
-    process.env.STUNNER_SHARED_SECRET = "";
-    process.env.DURATION              = "";
+    delete process.env.STUNNER_PUBLIC_ADDR;
+    delete process.env.STUNNER_PUBLIC_PORT;
+    delete process.env.STUNNER_TRANSPORT_TCP;
+    delete process.env.STUNNER_AUTH_TYPE;
+    delete process.env.STUNNER_REALM;
+    delete process.env.STUNNER_USERNAME;
+    delete process.env.STUNNER_PASSWORD;
+    delete process.env.STUNNER_SHARED_SECRET;
+    delete process.env.DURATION;
+    delete process.env.STUNNER_TRANSPORT_UDP_ENABLE;
+    delete process.env.STUNNER_TRANSPORT_TCP_ENABLE;
 }
 
 describe('getStunnerCredentials', ()  => {
@@ -171,7 +173,7 @@ describe('getIceConfig', ()  => {
         cleanup();
         process.env.STUNNER_TRANSPORT_TCP_ENABLE = "1";
         let config = getIceConfig({address: '4.3.2.1'});
-        
+
         it('config',      () => { assert.isDefined(config); });
         it('servers-def', () => { assert.isDefined(config.iceServers); });
         it('servers-len', () => { assert.equal(config.iceServers.length, 2); });
@@ -191,6 +193,76 @@ describe('getIceConfig', ()  => {
         it('credential-2',() => { assert.equal(config.iceServers[1].credential, 'pass'); });
         it('policy',      () => { assert.isDefined(config.iceTransportPolicy); });
         it('relay',       () => { assert.equal(config.iceTransportPolicy, 'relay'); });
+    });
+    context('enable tcp, env override', () => {
+        cleanup();
+        process.env.STUNNER_TRANSPORT_UDP_ENABLE = "0";
+        process.env.STUNNER_TRANSPORT_TCP_ENABLE = "0";
+        let config = getIceConfig({address: '4.3.2.1', transport_udp_enable: 1, transport_tcp_enable: 1});
+       
+        it('config',      () => { assert.isDefined(config); });
+        it('servers-def', () => { assert.isDefined(config.iceServers); });
+        it('servers-len', () => { assert.equal(config.iceServers.length, 2); });
+        it('url-1',       () => { assert.isDefined(config.iceServers[0].url); });
+        it('proto-1',     () => { assert.match(config.iceServers[0].url, /^turn/); });
+        it('addr-1',      () => { assert.match(config.iceServers[0].url, /4\.3\.2\.1/); });
+        it('port-1',      () => { assert.match(config.iceServers[0].url, /3478/); });
+        it('proto-1',     () => { assert.match(config.iceServers[0].url, /transport=udp$/); });
+        it('username-1',  () => { assert.equal(config.iceServers[0].username, 'user'); });
+        it('credential-1',() => { assert.equal(config.iceServers[0].credential, 'pass'); });
+        it('url-2',       () => { assert.isDefined(config.iceServers[1].url); });
+        it('proto-2',     () => { assert.match(config.iceServers[1].url, /^turn/); });
+        it('addr-2',      () => { assert.match(config.iceServers[1].url, /4\.3\.2\.1/); });
+        it('port-2',      () => { assert.match(config.iceServers[1].url, /3478/); });
+        it('proto-2',     () => { assert.match(config.iceServers[1].url, /transport=tcp$/); });
+        it('username-2',  () => { assert.equal(config.iceServers[1].username, 'user'); });
+        it('credential-2',() => { assert.equal(config.iceServers[1].credential, 'pass'); });
+        it('policy',      () => { assert.isDefined(config.iceTransportPolicy); });
+        it('relay',       () => { assert.equal(config.iceTransportPolicy, 'relay'); });
+    });
+    context('disable udp - 1', () => {
+        cleanup();
+        process.env.STUNNER_TRANSPORT_TCP_ENABLE = "1";
+        process.env.STUNNER_TRANSPORT_UDP_ENABLE = "0";
+        let config = getIceConfig({address: '4.3.2.1'});
+        
+        it('config',      () => { assert.isDefined(config); });
+        it('servers-def', () => { assert.isDefined(config.iceServers); });
+        it('servers-len', () => { assert.equal(config.iceServers.length, 1); });
+        it('url-1',       () => { assert.isDefined(config.iceServers[0].url); });
+        it('proto-1',     () => { assert.match(config.iceServers[0].url, /transport=tcp$/); });
+    });
+    context('disable udp - 2', () => {
+        cleanup();
+        process.env.STUNNER_TRANSPORT_TCP_ENABLE = "1";
+        process.env.STUNNER_TRANSPORT_UDP_ENABLE = "";
+        let config = getIceConfig({address: '4.3.2.1'});
+        
+        it('config',      () => { assert.isDefined(config); });
+        it('servers-def', () => { assert.isDefined(config.iceServers); });
+        it('servers-len', () => { assert.equal(config.iceServers.length, 1); });
+        it('url-1',       () => { assert.isDefined(config.iceServers[0].url); });
+        it('proto-1',     () => { assert.match(config.iceServers[0].url, /transport=tcp$/); });
+    });
+    context('disable all - 1', () => {
+        cleanup();
+        process.env.STUNNER_TRANSPORT_UDP_ENABLE = "0";
+        process.env.STUNNER_TRANSPORT_TCP_ENABLE = "0";
+        let config = getIceConfig({address: '4.3.2.1'});
+
+        it('config',      () => { assert.isDefined(config); });
+        it('servers-def', () => { assert.isDefined(config.iceServers); });
+        it('servers-len', () => { assert.equal(config.iceServers.length, 0); });
+    });
+    context('disable all - 2', () => {
+        cleanup();
+        process.env.STUNNER_TRANSPORT_UDP_ENABLE = "";
+        process.env.STUNNER_TRANSPORT_TCP_ENABLE = "";
+        let config = getIceConfig({address: '4.3.2.1'});
+
+        it('config',      () => { assert.isDefined(config); });
+        it('servers-def', () => { assert.isDefined(config.iceServers); });
+        it('servers-len', () => { assert.equal(config.iceServers.length, 0); });
     });
 });
 
