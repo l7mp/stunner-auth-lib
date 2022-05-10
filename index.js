@@ -205,6 +205,7 @@ function getIceConfig(options){
  * @param {TurnCredentialsOptions} [options]
  * @returns {TurnCredentials}
  */
+// should get the same output as https://pkg.go.dev/github.com/pion/turn/v2#GenerateLongTermCredentials
 function getStunnerCredentials(options){
     if(!options)options={};
     let auth_type = options.auth_type || process.env.STUNNER_AUTH_TYPE     || STUNNER_AUTH_TYPE;
@@ -225,18 +226,27 @@ function getStunnerCredentials(options){
         };
     case 'longterm':
         const timeStamp = Math.floor(Date.now() / 1000) + parseInt(duration);
-        const hmac = crypto.createHmac(algorithm, secret);
-        const credential = hmac.update(`$timeStamp`).digest(encoding);
-        return {
-            username: timeStamp,
-            credential: credential,
-            realm: realm,
-        };
+        return getLongtermForTimeStamp(timeStamp, secret, realm, algorithm, encoding);
     default:
         console.error('getStunnerCredentials: invalid authentication type:', auth_type);
         return undefined;
     }
 }
 
+// separated out for testing
+function getLongtermForTimeStamp(timeStamp, secret, realm, algorithm, encoding){
+    // console.log(timeStamp, secret, realm, algorithm, encoding);
+    const hmac = crypto.createHmac(algorithm, secret);
+    const password = hmac.update(Buffer.from(`${timeStamp}`, 'utf-8'));
+    // console.log(password.digest('hex'));
+    const credential = password.digest(encoding);
+    return {
+        username: `${timeStamp}`,
+        credential: credential,
+        realm: realm,
+    };
+}
+
 module.exports.getIceConfig = getIceConfig;
 module.exports.getStunnerCredentials = getStunnerCredentials;
+module.exports.getLongtermForTimeStamp = getLongtermForTimeStamp;

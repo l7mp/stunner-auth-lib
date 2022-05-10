@@ -1,6 +1,7 @@
-const assert                = require('chai').assert;
-const getStunnerCredentials = require('../index.js').getStunnerCredentials;
-const getIceConfig          = require('../index.js').getIceConfig;
+const assert                  = require('chai').assert;
+const getStunnerCredentials   = require('../index.js').getStunnerCredentials;
+const getIceConfig            = require('../index.js').getIceConfig;
+const getLongtermForTimeStamp = require('../index.js').getLongtermForTimeStamp;
 
 function cleanup(){
     process.env.STUNNER_PUBLIC_ADDR   = "";
@@ -34,10 +35,11 @@ describe('getStunnerCredentials', ()  => {
     context('auth_type: longterm', () => {
         cleanup();
         let cred = getStunnerCredentials({auth_type: 'longterm'});
-
-        it('username',   () => { assert.isNumber(cred.username); });
-        it('duration-1', () => { assert.isAtMost(Math.floor(Date.now()/1000), cred.username); });
-        it('duration-2', () => { assert.isAtMost(cred.username, Math.floor(Date.now()/1000 + 24 * 60 * 60)); });
+        let username = parseInt(cred.username);
+        
+        it('username',   () => { assert.isNotNaN(username); });
+        it('duration-1', () => { assert.isAtMost(Math.floor(Date.now()/1000), username); });
+        it('duration-2', () => { assert.isAtMost(username, Math.floor(Date.now()/1000 + 24 * 60 * 60)); });
         it('credential', () => { assert.isNotEmpty(cred.credential); });
         it('realm',      () => { assert.equal(cred.realm, 'stunner.l7mp.io'); });
     });
@@ -68,10 +70,11 @@ describe('getStunnerCredentials', ()  => {
         cleanup();
         process.env.STUNNER_AUTH_TYPE = "plaintext";
         let cred = getStunnerCredentials({auth_type: 'longterm'});
-
-        it('username',   () => { assert.isNumber(cred.username); });
-        it('duration-1', () => { assert.isAtMost(Math.floor(Date.now()/1000), cred.username); });
-        it('duration-2', () => { assert.isAtMost(cred.username, Math.floor(Date.now()/1000 + 24 * 60 * 60)); });
+        let username = parseInt(cred.username);
+        
+        it('username',   () => { assert.isNotNaN(username); });
+        it('duration-1', () => { assert.isAtMost(Math.floor(Date.now()/1000), username); });
+        it('duration-2', () => { assert.isAtMost(username, Math.floor(Date.now()/1000 + 24 * 60 * 60)); });
         it('credential', () => { assert.isNotEmpty(cred.credential); });
         it('realm',      () => { assert.equal(cred.realm, 'stunner.l7mp.io'); });
     });
@@ -80,10 +83,11 @@ describe('getStunnerCredentials', ()  => {
         process.env.STUNNER_AUTH_TYPE = "longterm";
         process.env.DURATION = 100;
         let cred = getStunnerCredentials();
-
-        it('username',   () => { assert.isNumber(cred.username); });
-        it('duration-1', () => { assert.isAtMost(Math.floor(Date.now()/1000), cred.username); });
-        it('duration-2', () => { assert.isAtMost(cred.username, Math.floor(Date.now()/1000 + 100)); });
+        let username = parseInt(cred.username);
+        
+        it('username',   () => { assert.isNotNaN(username); });
+        it('duration-1', () => { assert.isAtMost(Math.floor(Date.now()/1000), username); });
+        it('duration-2', () => { assert.isAtMost(username, Math.floor(Date.now()/1000 + 100)); });
         it('credential', () => { assert.isNotEmpty(cred.credential); });
         it('realm',      () => { assert.equal(cred.realm, 'stunner.l7mp.io'); });
     });
@@ -188,4 +192,29 @@ describe('getIceConfig', ()  => {
         it('policy',      () => { assert.isDefined(config.iceTransportPolicy); });
         it('relay',       () => { assert.equal(config.iceTransportPolicy, 'relay'); });
     });
+});
+
+describe('longterm - STUNner compatibility', ()  => {
+    let tests = [
+        [1652173256, "my-secret", "CguKE5jD1SnJajHjrQEwyx+pHBk="],
+        [1652173361, "my-secret", "X54Uk1dmF1fhXy2nGfyNdLSddvk="],
+        [1652173411, "my-secret", "qaTqeZNcAov2fd6IYZZPsJhlLuY="],
+        [1652173494, "another-secret", "e64kdQvh7aW5rqb2PauFwjJ/CFs="],
+        [1652177046, "another-secret", "igZpgV86ECJutlpW9AOr2IOQASU="],
+        [1652209461, "another-secret", "98pQ6dr9x2f5f7kUxRq+6xU3qOY="],
+    ];
+
+    let i = 0;
+    for (const t of tests) {
+        context(`longterm-${i++}`, () => {
+            cleanup();
+            // should be integer
+            let username = t[0];
+            // gets integer username
+            let c = getLongtermForTimeStamp(username, t[1], "dummy-realm", "sha1", "base64");
+            // returns stringified username
+            it('username',   () => { assert.equal(c.username, `${username}`) });
+            it('credential', () => { assert.equal(c.credential, t[2]) });
+        });
+    }
 });
