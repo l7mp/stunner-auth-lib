@@ -12,7 +12,7 @@ function cleanup(){
     delete process.env.STUNNER_USERNAME;
     delete process.env.STUNNER_PASSWORD;
     delete process.env.STUNNER_SHARED_SECRET;
-    delete process.env.DURATION;
+    delete process.env.STUNNER_DURATION;
     delete process.env.STUNNER_TRANSPORT_UDP_ENABLE;
     delete process.env.STUNNER_TRANSPORT_TCP_ENABLE;
 }
@@ -83,7 +83,7 @@ describe('getStunnerCredentials', ()  => {
     context('auth_type: longterm, duration', () => {
         cleanup();
         process.env.STUNNER_AUTH_TYPE = "longterm";
-        process.env.DURATION = 100;
+        process.env.STUNNER_DURATION = 100;
         let cred = getStunnerCredentials();
         let username = parseInt(cred.username);
         

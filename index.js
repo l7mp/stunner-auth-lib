@@ -111,7 +111,7 @@ const STUNNER_SHARED_SECRET = 'my-secret';
  * Credential lifetime for long-term credential authentication.
  * @const {string}
  */
-const DURATION = process.env.DURATION || (24 * 60 * 60);
+const DURATION = process.env.STUNNER_DURATION || (24 * 60 * 60);
 
 /**
  * ICE transport policy: either 'all' (generate all ICE candidates) or 'relay' (consider TURN relay candidates only).
@@ -145,7 +145,7 @@ function getIceConfig(options){
     let username  = options.username  || process.env.STUNNER_USERNAME      || STUNNER_USERNAME;
     let password  = options.password  || process.env.STUNNER_PASSWORD      || STUNNER_PASSWORD;
     let secret    = options.secret    || process.env.STUNNER_SHARED_SECRET || STUNNER_SHARED_SECRET;
-    let duration  = options.duration  || process.env.DURATION              || DURATION;
+    let duration  = options.duration  || process.env.STUNNER_DURATION      || DURATION;
     let ice_transport_policy = options.ice_transport_policy ||
         process.env.STUNNER_ICE_TRANSPORT_POLICY || STUNNER_ICE_TRANSPORT_POLICY;
     let algorithm = options.algorithm || ALGORITHM;
@@ -228,7 +228,7 @@ function getStunnerCredentials(options){
     let username  = options.username  || process.env.STUNNER_USERNAME      || STUNNER_USERNAME;
     let password  = options.password  || process.env.STUNNER_PASSWORD      || STUNNER_PASSWORD;
     let secret    = options.secret    || process.env.STUNNER_SHARED_SECRET || STUNNER_SHARED_SECRET;
-    let duration  = options.duration  || process.env.DURATION              || DURATION;
+    let duration  = options.duration  || process.env.STUNNER_DURATION      || DURATION;
     let algorithm = options.algorithm || ALGORITHM;
     let encoding  = options.encoding  || ENCODING;
 
