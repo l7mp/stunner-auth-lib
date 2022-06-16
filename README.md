@@ -102,7 +102,7 @@ STUNner credentials in a single step and sending it back the WebRTC clients duri
   {
     iceServers: [
       {
-        url: 'turn://1.2.3.4:3478?transport=udp',
+        url: 'turn:1.2.3.4:3478?transport=udp',
         username: 'my-user',
         credential: 'my-password'
       }
