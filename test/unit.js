@@ -93,6 +93,19 @@ describe('getStunnerCredentials', ()  => {
         it('credential', () => { assert.isNotEmpty(cred.credential); });
         it('realm',      () => { assert.equal(cred.realm, 'stunner.l7mp.io'); });
     });
+    context('auth_type: longterm, duration/string', () => {
+        cleanup();
+        process.env.STUNNER_AUTH_TYPE = "longterm";
+        process.env.STUNNER_DURATION = "100";
+        let cred = getStunnerCredentials();
+        let username = parseInt(cred.username);
+        
+        it('username',   () => { assert.isNotNaN(username); });
+        it('duration-1', () => { assert.isAtMost(Math.floor(Date.now()/1000), username); });
+        it('duration-2', () => { assert.isAtMost(username, Math.floor(Date.now()/1000 + 100)); });
+        it('credential', () => { assert.isNotEmpty(cred.credential); });
+        it('realm',      () => { assert.equal(cred.realm, 'stunner.l7mp.io'); });
+    });
     context('realm', () => {
         cleanup();
         process.env.STUNNER_REALM = "realm";
@@ -135,6 +148,25 @@ describe('getIceConfig', ()  => {
         cleanup();
         process.env.STUNNER_PUBLIC_ADDR = "5.6.7.8";
         process.env.STUNNER_PUBLIC_PORT = 1111;
+        let config = getIceConfig();
+        
+        it('config',      () => { assert.isDefined(config); });
+        it('servers-def', () => { assert.isDefined(config.iceServers); });
+        it('servers-len', () => { assert.isNotEmpty(config.iceServers); });
+        it('url',         () => { assert.isDefined(config.iceServers[0].url); });
+        it('proto',       () => { assert.match(config.iceServers[0].url, /^turn/); });
+        it('addr',        () => { assert.match(config.iceServers[0].url, /5\.6\.7\.8/); });
+        it('port',        () => { assert.match(config.iceServers[0].url, /1111/); });
+        it('proto',       () => { assert.match(config.iceServers[0].url, /transport=udp$/); });
+        it('username',    () => { assert.equal(config.iceServers[0].username, 'user'); });
+        it('credential',  () => { assert.equal(config.iceServers[0].credential, 'pass'); });
+        it('policy',      () => { assert.isDefined(config.iceTransportPolicy); });
+        it('relay',       () => { assert.equal(config.iceTransportPolicy, 'relay'); });
+    });
+    context('address-port/string, env', () => {
+        cleanup();
+        process.env.STUNNER_PUBLIC_ADDR = "5.6.7.8";
+        process.env.STUNNER_PUBLIC_PORT = "1111";
         let config = getIceConfig();
         
         it('config',      () => { assert.isDefined(config); });
