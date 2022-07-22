@@ -1,14 +1,15 @@
 # @l7mp/stunner-auth-lib
 
-A library to create ICE configuration and TURN credentials for the [STUNner Kubernetes ingress
+A library to generate ICE configuration and TURN credentials for the [STUNner Kubernetes ingress
 gateway for WebRTC](https://github.com/l7mp/stunner).
 
 ```javascript
 const auth = require('@l7mp/stunner-auth-lib');
 
 var credentials = auth.getStunnerCredentials({
+    auth_type: 'longterm,
     secret: "my-shared-secret",
-    duration: 24*60*60,
+    duration: 24*60*60,  // credentials valid for one day
 });
 ```
 
@@ -16,8 +17,8 @@ var credentials = auth.getStunnerCredentials({
 
 Install from NPM.
 
-```sh
-$ npm install @l7mp/stunner-auth-lib
+```console
+npm install @l7mp/stunner-auth-lib
 ```
 
 ## Usage 
@@ -34,6 +35,8 @@ STUNner, in order to reach the WebRTC media plane deployed into Kubernetes behin
 
 The library will automatically parse the current STUNner configuration from the Kubernetes control
 plane to generate the STUN/TURN credentials and the ICE server configuration. 
+
+![STUNner authentication architecture](/stunner_auth_lib_arch.svg)
 
 ### Configuration
 
