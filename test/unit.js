@@ -317,8 +317,8 @@ describe('longterm - STUNner compatibility', ()  => {
             // gets integer username
             let c = getLongtermForTimeStamp(username, t[1], "dummy-realm", "sha1", "base64");
             // returns stringified username
-            it('username',   () => { assert.equal(c.username, `${username}`) });
-            it('credential', () => { assert.equal(c.credential, t[2]) });
+            it('username',   () => { assert.equal(c.username, `${username}`); });
+            it('credential', () => { assert.equal(c.credential, t[2]); });
         });
     }
 });
