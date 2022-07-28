@@ -1,6 +1,6 @@
 {
     "name": "@l7mp/stunner-auth-lib",
-    "version": "0.9.4",
+    "version": "0.9.6",
     "description": "STUN/TURN credentials generation for STUNner",
     "author": "l7mp.io",
     "homepage": "https://l7mp.io",

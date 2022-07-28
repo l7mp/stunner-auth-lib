@@ -34,7 +34,7 @@ credentials and ICE server configuration received from the application server to
 STUNner, in order to reach the WebRTC media plane deployed into Kubernetes behind STUNner.
 
 The library will automatically parse the current STUNner configuration from the Kubernetes control
-plane to generate the STUN/TURN credentials and the ICE server configuration. 
+plane if available. Otherwise, it calls back to taking configuration from environment variables.
 
 ![STUNner authentication architecture](/stunner_auth_lib_arch.svg)
 
@@ -76,15 +76,15 @@ From this point, the STUNner configuration, as actually existing in the `stunner
 ConfigMap, will be mapped into the application server pod's filesystem under the path
 `/etc/stunnerd/stunnerd.conf` and the full path will be available in the `STUNNER_CONFIG_FILENAME`
 environment variable.  The library will pick up this configuration and use it to generate the
-STUN/TURN credentials and full ICE server configurations necessary to reach STUNner.
-
-If you change the STUNner configuration through the [Kubernetes Gateway
-API](https://github.com/l7mp/stunner-gateway-operator/README.md#configure-the-operator) then the
-new configuration will be immediately mapped into the filesystem of your application server. The
-library includes a file watcher that will reread the configuration as it changes and the new
-settings will immediately take effect: new client requests will receive the updated STUN/TURN
-credentials. When no valid configuration file is found by the watcher, the library falls back to
-the [standalone mode](README.md#fallback-to-standalone-mode).
+STUN/TURN credentials and full ICE server configurations necessary to reach STUNner. In addition,
+every time you change the STUNner configuration through the [Kubernetes Gateway
+API](https://github.com/l7mp/stunner-gateway-operator/README.md#configure-the-operator), the new
+configuration will be immediately mapped into the filesystem of your application server. Every time
+it is called the library will always reread this configuration and the new settings will
+immediately take effect: new client requests will receive the updated STUN/TURN credentials. When
+no valid configuration file is found by the watcher, the library falls back to the [standalone
+mode](README.md#fallback-to-standalone-mode): it takes STUNner configurations from environment
+variables or uses package defaults.
 
 ### Generating ICE configuration
 
@@ -95,15 +95,16 @@ STUNner credentials in a single step and sending it back the WebRTC clients duri
 * Generate a full [ICE configuration
   object](https://developer.mozilla.org/en-US/docs/Web/API/RTCIceServer) on
   the [WebRTC application server](https://bloggeek.me/webrtc-server).
+
   ```javascript
   const auth = require('@l7mp/stunner-auth-lib');
   ...
   var ICE_config = auth.getIceConfig();
   console.log(ICE_config);
-
-  // send ICE configuration through the WebSocket/JSON connection back to the client
   ```
+
   Output:
+
   ```javascript
   {
     iceServers: [
@@ -116,20 +117,20 @@ STUNner credentials in a single step and sending it back the WebRTC clients duri
     iceTransportPolicy: 'relay'
   }
   ```
-* Send the generated ICE configuration to the clients during the WebSocket/JSON call setup process
+
+* Send the generated ICE configuration back to the clients during the WebSocket/JSON call setup process
   (e.g., during user registration) and use this configuration in the clients to initialize the WebRTC
   [`PeerConnection`](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection).
+  
   ```javascript
   var ICE_config = ...; // read ICE configuration from the WebSocket/JSON connection 
   var pc = new RTCPeerConnection(ICE_config);
   ```
 
-You can override the path to the STUNner configuration file by re-initializing the library:
+You can override the path to the STUNner configuration file by when calling the function.
+
 ```javascript
-const auth = require('@l7mp/stunner-auth-lib');
-auth.config.init({config_file: "MY_STUNNER_CONFIG_FILENAME"});
-...
-var ICE_config = auth.getIceConfig();
+var ICE_config = auth.getIceConfig({config_file: <MY_STUNNER_CONFIG_FILENAME>});
 ```
 
 ### Generating STUN/TURN credentials
@@ -148,16 +149,6 @@ Output:
 ```
 STUNner credentials: 1652118264 / nRU+Iz2ENeP2Y3sDXzSRsFRDs8s=
 ```
-
-### Stopping the configuration file watcher
-
-When you no longer need the library you can disable it as follows.
-
-```javascript
-auth.config.stop();
-```
-
-This will stop the configuration file watcher and release all resources allocated.
 
 ### Fallback to standalone mode
 
@@ -198,11 +189,9 @@ The library uses the following STUNner configuration parameters in fallback mode
 * `STUNNER_PASSWORD` (default: `pass`): password for `plaintext` authentication.
 * `STUNNER_SHARED_SECRET` (default: `secret`): the shared secret for `longterm` authentication.
 
-By default, UDP is assumed as the STUN/TURN transport; see the [STUNner
-documentation](https://github.com/l7mp/stunner/README.md) on how to enable STUN/TURN over TCP, TLS
-and DTLS.  For most configuration parameters the library specifies sane defaults, which can be
-overridden by the environment variables (i.e., the STUNner configuration), which can in turn be
-further overridden in the function arguments specified on the library calls.
+For most configuration parameters the library specifies sane defaults, which can be overridden by
+the environment variables (i.e., the STUNner configuration), which can in turn be further
+overridden in the function arguments specified on the library calls.
 
 The below code will generate a full [ICE configuration
   object](https://developer.mozilla.org/en-US/docs/Web/API/RTCIceServer) in the fallback mode using
@@ -247,12 +236,13 @@ Note that all manual overrides are available in the default mode as well.
   Kubernetes Gateway Operator](https://github.com/l7mp/stunner-gateway-operator) to render the
   configuration into an arbitrary namespace from where your application server can pick it up.
 
-* If you change the STUNner credentials from the Kubernetes Gateway API then old clients, which
-  still use outdated STUNner credentials, will need to go through the authentication process
-  (receive a new ICE configuration, re-request TURN permissions again from STUNner, etc.)
-  again. Otherwise, they will time out on the next TURN permission refresh cycle. Currently it is
-  the responsibility of the application server to orchestrate this process. As a rule of thumb, try
-  to avoid resetting the authentication settings when active users are authenticated with STUNner.
+* If you change the STUNner credentials from the Kubernetes Gateway API then active clients, which
+  have already received an ICE configuration that is now being rendered invalid by your change,
+  will need to go through the authentication process (receive a new ICE configuration, re-request
+  TURN permissions again from STUNner, etc.)  again. Otherwise, they will time out on the next TURN
+  permission refresh cycle. Currently it is the responsibility of the application server to
+  orchestrate this process. As a rule of thumb, try to avoid resetting the authentication settings
+  when active users are authenticated with STUNner.
 
 ## Help
 
