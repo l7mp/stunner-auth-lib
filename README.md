@@ -7,8 +7,8 @@ gateway for WebRTC](https://github.com/l7mp/stunner).
 const auth = require('@l7mp/stunner-auth-lib');
 
 var credentials = auth.getStunnerCredentials({
-    auth_type: 'longterm,
-    secret: "my-shared-secret",
+    auth_type: 'longterm',
+    secret: 'my-shared-secret',
     duration: 24*60*60,  // credentials valid for one day
 });
 ```
@@ -23,9 +23,9 @@ npm install @l7mp/stunner-auth-lib
 
 ## Usage 
 
-This library simplifies generating STUN/TURN credentials and ICE server configuration for accessing
-the [STUNner Kubernetes ingress gateway for WebRTC ](https://github.com/l7mp/stunner) from WebRTC
-clients.
+<!-- This library simplifies generating STUN/TURN credentials and ICE server configuration for accessing -->
+<!-- the [STUNner Kubernetes ingress gateway for WebRTC ](https://github.com/l7mp/stunner) from WebRTC -->
+<!-- clients. -->
 
 The intended use is to ease the generation of STUN/TURN credentials and ICE server configuration
 stanza in the WebRTC application server. The application server can send these back to the WebRTC
@@ -34,7 +34,7 @@ credentials and ICE server configuration received from the application server to
 STUNner, in order to reach the WebRTC media plane deployed into Kubernetes behind STUNner.
 
 The library will automatically parse the current STUNner configuration from the Kubernetes control
-plane if available. Otherwise, it calls back to taking configuration from environment variables.
+plane if available. Otherwise, it falls back to taking configuration from environment variables.
 
 ![STUNner authentication architecture](/stunner_auth_lib_arch.svg)
 
@@ -76,15 +76,17 @@ From this point, the STUNner configuration, as actually existing in the `stunner
 ConfigMap, will be mapped into the application server pod's filesystem under the path
 `/etc/stunnerd/stunnerd.conf` and the full path will be available in the `STUNNER_CONFIG_FILENAME`
 environment variable.  The library will pick up this configuration and use it to generate the
-STUN/TURN credentials and full ICE server configurations necessary to reach STUNner. In addition,
-every time you change the STUNner configuration through the [Kubernetes Gateway
+STUN/TURN credentials and full ICE server configurations necessary to reach STUNner. 
+
+Every time you change the STUNner configuration through the [Kubernetes Gateway
 API](https://github.com/l7mp/stunner-gateway-operator/README.md#configure-the-operator), the new
-configuration will be immediately mapped into the filesystem of your application server. Every time
-it is called the library will always reread this configuration and the new settings will
-immediately take effect: new client requests will receive the updated STUN/TURN credentials. When
-no valid configuration file is found by the watcher, the library falls back to the [standalone
-mode](README.md#fallback-to-standalone-mode): it takes STUNner configurations from environment
-variables or uses package defaults.
+configuration will be immediately mapped into the filesystem of your application server. When
+called, the library will re-parse the active configuration from the filesystem and the new settings
+will immediately take effect: new client requests will receive up-to-date STUN/TURN
+credentials. 
+
+If no valid configuration file is found, the library falls back to the [standalone
+mode](README.md#fallback-to-standalone-mode).
 
 ### Generating ICE configuration
 
@@ -127,7 +129,8 @@ STUNner credentials in a single step and sending it back the WebRTC clients duri
   var pc = new RTCPeerConnection(ICE_config);
   ```
 
-You can override the path to the STUNner configuration file by when calling the function.
+You can override the path to the STUNner configuration file (and other options) when calling the
+function.
 
 ```javascript
 var ICE_config = auth.getIceConfig({config_file: <MY_STUNNER_CONFIG_FILENAME>});
@@ -155,26 +158,9 @@ STUNner credentials: 1652118264 / nRU+Iz2ENeP2Y3sDXzSRsFRDs8s=
 Some may favor running STUNner in the [standalone mode](https://github.com/l7mp/stunner) in order
 to be able to manually customize the STUNner dataplane instead of relying on the operator to render
 the configuration. The library automatically falls back to using the standalone mode when no
-configuration file is available under the path specified `STUNNER_CONFIG_FILENAME` environment
-variable. For this, the application server needs to have access to the [STUNner Kubernetes
-`ConfigMap`](https://github.com/l7mp/stunner#configuration) mapped as environment variables into
-the pod running the application server. The below is a Kubernetes pod template snippet shows how to
-do this.
-
-``` yaml
-...
-spec:
-  containers:
-    - name: <my-application-server>
-      image: <my-application-server-image>
-      ...
-      envFrom:
-        - configMapRef:
-            name: stunner-config
-...
-```
-
-The library uses the following STUNner configuration parameters in fallback mode.
+configuration file is available under the path specified by the `STUNNER_CONFIG_FILENAME`
+environment variable. For this, the application server needs to have access to the following
+environment variables.
 
 * `STUNNER_PUBLIC_ADDR` (no default, must be
   [customized](https://github.com/l7mp/stunner#learning-the-external-ip-and-port)): STUNner public
